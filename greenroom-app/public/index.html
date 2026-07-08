@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Greenroom</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;0,900;1,600&family=Work+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="marquee-wrap">
+  <div class="marquee-frame">
+    <h1 class="title">The Greenroom</h1>
+    <div class="subtitle">create a cast &middot; step into character</div>
+  </div>
+</div>
+
+<!-- Auth screen -->
+<div class="auth-wrap" id="authView">
+  <div class="auth-card">
+    <div class="auth-toggle">
+      <button id="authTabLogin" class="active" onclick="setAuthMode('login')">Log in</button>
+      <button id="authTabRegister" onclick="setAuthMode('register')">Sign up</button>
+    </div>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="authEmail" autocomplete="email">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="authPassword" autocomplete="current-password">
+    </div>
+    <div class="field hide" id="displayNameField">
+      <label>Display name</label>
+      <input type="text" id="authDisplayName" placeholder="Shown when you publish a character">
+    </div>
+    <div class="field hide" id="adminCodeField">
+      <label>Admin code (optional)</label>
+      <input type="text" id="authAdminCode" placeholder="Only if you were given one">
+    </div>
+    <div class="error-line" id="authError"></div>
+    <button class="btn-primary" style="width:100%;" id="authSubmitBtn" onclick="submitAuth()">Log in</button>
+  </div>
+</div>
+
+<!-- Main app -->
+<div id="appRoot" class="hide">
+  <div class="identity-bar">
+    <span>playing as <b id="identityName">...</b></span>
+    <button onclick="restartOnboarding()">how this works</button>
+    <button onclick="logout()">log out</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" id="tabHome" onclick="switchTab('home')">Your Greenroom</button>
+    <button class="tab-btn" id="tabGallery" onclick="switchTab('gallery')">Public Gallery</button>
+    <button class="tab-btn hide" id="tabAdmin" onclick="switchTab('admin')">Admin Panel</button>
+  </div>
+
+  <div class="stage" id="homeView">
+    <div class="section-head">
+      <h2>Your Personas</h2>
+      <div style="display:flex; align-items:center; gap:14px;">
+        <span class="count" id="personaCount">0</span>
+        <button class="new-btn" onclick="openModal('persona')">+ New Persona</button>
+      </div>
+    </div>
+    <div id="personaGrid" class="cast-grid"></div>
+    <div id="personaEmpty" class="empty-note">No personas yet. Create the "you" who steps on stage.</div>
+
+    <div class="section-head">
+      <h2>Characters</h2>
+      <div style="display:flex; align-items:center; gap:14px;">
+        <span class="count" id="characterCount">0</span>
+        <button class="new-btn" onclick="openModal('character')">+ New Character</button>
+      </div>
+    </div>
+    <div id="characterGrid" class="cast-grid"></div>
+    <div id="characterEmpty" class="empty-note">No characters yet. Add an original character or someone from a fandom you love.</div>
+
+    <div class="section-head"><h2>Begin a Scene</h2></div>
+    <div class="setup-panel">
+      <div class="field" style="margin-bottom:10px;">
+        <label>Choose your persona</label>
+        <div class="pick-row" id="personaPicks"></div>
+      </div>
+      <div class="field" style="margin-bottom:6px;">
+        <label>Choose a character</label>
+        <div class="pick-row" id="characterPicks"></div>
+      </div>
+      <button class="begin-btn" id="beginBtn" disabled onclick="beginScene()">Begin Scene</button>
+    </div>
+  </div>
+
+  <div class="stage hide" id="galleryView">
+    <div class="section-head">
+      <h2>Public Gallery</h2>
+      <span class="count" id="galleryCount">0</span>
+    </div>
+    <p style="color:var(--muted); font-size:13px; margin-top:-6px;">Characters other people have published. Add one to your own cast to start a scene with them.</p>
+    <div id="galleryGrid" class="cast-grid"></div>
+    <div id="galleryEmpty" class="empty-note">No one has published a character yet. Be the first from Your Greenroom.</div>
+  </div>
+
+  <div class="stage hide" id="adminView">
+    <div class="section-head"><h2>Users</h2></div>
+    <table class="users-table" id="usersTable">
+      <thead><tr><th>Email</th><th>Display name</th><th>Role</th><th>Status</th><th></th></tr></thead>
+      <tbody id="usersTableBody"></tbody>
+    </table>
+
+    <div class="section-head"><h2>Public Gallery (moderation)</h2></div>
+    <div id="adminGalleryGrid" class="cast-grid"></div>
+  </div>
+
+  <div class="stage hide stageView" id="stageView">
+    <button class="back-link" onclick="goHome()">&larr; Back to Greenroom</button>
+    <div class="scene-title" id="sceneTitle"></div>
+    <div class="script-page" id="scriptPage"></div>
+    <div class="composer">
+      <textarea id="composerInput" placeholder="Write your line..." rows="1"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+</div>
+
+<!-- Character create/edit modal -->
+<div class="overlay" id="modalOverlay">
+  <div class="modal">
+    <h3 id="modalTitle">New Persona</h3>
+    <input type="hidden" id="editId">
+    <div class="field">
+      <label>Type</label>
+      <div class="type-toggle" id="typeToggle">
+        <button type="button" data-type="persona" onclick="setModalType('persona')">Persona (you)</button>
+        <button type="button" data-type="character" onclick="setModalType('character')">Character (AI plays)</button>
+      </div>
+    </div>
+    <div class="field"><label>Name</label><input type="text" id="fieldName" maxlength="60" placeholder="e.g. Elowen Vance"></div>
+    <div class="field"><label>Tagline (optional)</label><input type="text" id="fieldTagline" maxlength="80" placeholder="A one-line hook"></div>
+    <div class="field"><label>Source</label><input type="text" id="fieldFandom" maxlength="50" placeholder="Original, or a fandom"></div>
+    <div class="field"><label>Personality &amp; background</label><textarea id="fieldDescription" rows="5" maxlength="1200" placeholder="Voice, mannerisms, history, motivations..."></textarea></div>
+    <div class="field"><label>Portrait color</label><div class="swatches" id="swatches"></div></div>
+    <div class="error-line" id="modalError"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveCharacter()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Onboarding walkthrough -->
+<div class="overlay" id="onboardOverlay">
+  <div class="modal onboard-modal">
+    <button class="onboard-skip" onclick="skipOnboarding()">Skip</button>
+    <div class="onboard-icon" id="onboardIcon">🎭</div>
+    <h3 id="onboardTitle"></h3>
+    <div class="onboard-body" id="onboardBody"></div>
+    <div class="onboard-dots" id="onboardDots"></div>
+    <div class="onboard-nav">
+      <button class="btn-secondary" id="onboardBackBtn" onclick="onboardBack()">Back</button>
+      <span class="spacer"></span>
+      <button class="btn-primary" id="onboardNextBtn" onclick="onboardNext()">Next</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
